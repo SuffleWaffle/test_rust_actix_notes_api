@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  receptacles_detection_service:
+    image: 064427434392.dkr.ecr.us-east-1.amazonaws.com/receptacles_detection_service:latest
+    container_name: receptacles_detection_service
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - '${PROD_SYSTEM_PATH_TO_MODEL}:/app/receptacle_model'
+      - '${PROD_SYSTEM_PATH_TO_CUDA_CACHE}:/app/.nv/ComputeCache'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    environment:
+      - ENVIRONMENT=PRODUCTION
+    env_file:
+      - .env
+      - src_env/prod/.env
+    ports:
+      - '${PROD_SYSTEM_APP_PORT}:${PROD_APP_PORT}/tcp'
+    expose:
+      - '${PROD_APP_PORT}/tcp'
+    networks:
+      - drawer-dev
+    command: gunicorn main:app --worker-tmp-dir /dev/shm -b ${PROD_APP_HOST}:${PROD_APP_PORT} -w ${PROD_APP_WORKERS} -t ${PROD_APP_TIMEOUT} --graceful-timeout ${PROD_APP_GRACEFUL_TIMEOUT} -k uvicorn.workers.UvicornWorker
+
+networks:
+  drawer-dev:
+    driver: bridge
