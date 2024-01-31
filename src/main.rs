@@ -13,7 +13,7 @@ pub struct Response {
 #[get("/health")]
 async fn healthcheck() -> impl Responder {
     let response = Response {
-        message: "Deromen has a big cock".to_string(),
+        message: "Deromen has a nice cock".to_string(),
     };
 
     HttpResponse::Ok().json(response)
